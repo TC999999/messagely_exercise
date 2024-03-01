@@ -1,3 +1,9 @@
+const express = require("express");
+const router = new express.Router();
+const { ensureLoggedIn, ensureCorrectUser } = require("../middleware/auth");
+const Message = require("../models/message");
+const ExpressError = require("../expressError");
+
 /** GET /:id - get detail of message.
  *
  * => {message: {id,
@@ -11,6 +17,20 @@
  *
  **/
 
+router.post("/:id", ensureLoggedIn, async (req, res, next) => {
+  try {
+    const message = await Message.get(req.params.id);
+    if (
+      req.user.username == message.from_user.username ||
+      req.user.username == message.to_user.username
+    ) {
+      return res.json(message);
+    }
+    throw new ExpressError("Unauthorized", 401);
+  } catch (err) {
+    return next(err);
+  }
+});
 
 /** POST / - post message.
  *
@@ -19,6 +39,19 @@
  *
  **/
 
+router.post("/post", ensureLoggedIn, async (req, res, next) => {
+  try {
+    const { to_username, body } = req.body;
+    const message = await Message.create({
+      from_username: req.user.username,
+      to_username,
+      body,
+    });
+    return res.json(message);
+  } catch (err) {
+    return next(err);
+  }
+});
 
 /** POST/:id/read - mark message as read:
  *
@@ -28,3 +61,20 @@
  *
  **/
 
+router.post("/:id/read", async (req, res, next) => {
+  try {
+    const message = await Message.get(req.params.id);
+    if (message.read_at !== null) {
+      return res.json({ msg: "You have already read this message!" });
+    }
+    if (req.user.username == message.to_user.username) {
+      const message = await Message.markRead(req.params.id);
+      return res.json(message);
+    }
+    throw new ExpressError("Unauthorized", 401);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+module.exports = router;

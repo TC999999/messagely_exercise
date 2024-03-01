@@ -18,9 +18,9 @@ router.post("/login", async (req, res, next) => {
     if (await User.authenticate(username, password)) {
       await User.updateLoginTimestamp(username);
       const token = jwt.sign({ username }, SECRET_KEY);
-      return res.json({ msg: `WELCOME BACK, ${username}`, token });
+      return res.json({ msg: `Welcome back, ${username}!`, token });
     }
-    throw new ExpressError(`Invalid username/password`, 400);
+    throw new ExpressError(`Incorrect password`, 400);
   } catch (err) {
     return next(err);
   }
@@ -36,13 +36,13 @@ router.post("/login", async (req, res, next) => {
 router.post("/register", async (req, res, next) => {
   try {
     const { username, password, first_name, last_name, phone } = req.body;
-    const newUser = await User.register(
+    const newUser = await User.register({
       username,
       password,
       first_name,
       last_name,
-      phone
-    );
+      phone,
+    });
     const token = jwt.sign({ username: newUser.username }, SECRET_KEY);
     return res.json({
       msg: `User ${newUser.username} created. Welcome!`,
@@ -52,6 +52,13 @@ router.post("/register", async (req, res, next) => {
     if (err.code === "23505") {
       return next(
         new ExpressError("Username taken. Please pick another!", 400)
+      );
+    } else if (err.code === "23502") {
+      return next(
+        new ExpressError(
+          "Fields must include a username, a password, your first name, your last name, and your phone number",
+          400
+        )
       );
     }
     return next(err);
