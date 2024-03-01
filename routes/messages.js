@@ -61,7 +61,7 @@ router.post("/post", ensureLoggedIn, async (req, res, next) => {
  *
  **/
 
-router.post("/:id/read", async (req, res, next) => {
+router.post("/:id/read", ensureLoggedIn, async (req, res, next) => {
   try {
     const message = await Message.get(req.params.id);
     if (message.read_at !== null) {
