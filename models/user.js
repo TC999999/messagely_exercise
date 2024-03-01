@@ -7,24 +7,6 @@ const { BCRYPT_WORK_FACTOR } = require("../config");
 /** User of the site. */
 
 class User {
-  constructor(
-    username,
-    password,
-    first_name,
-    last_name,
-    phone,
-    join_at,
-    last_login_at
-  ) {
-    this.username = username;
-    this.password = password;
-    this.first_name = first_name;
-    this.last_name = last_name;
-    this.phone = phone;
-    this.join_at = join_at;
-    this.last_login_at = last_login_at;
-  }
-
   /** register new user -- returns
    *    {username, password, first_name, last_name, phone}
    */
@@ -38,12 +20,11 @@ class User {
   ) {
     const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_WORK_FACTOR);
     const results = await db.query(
-      "INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, CURRENT_DATE) RETURNING username, password, first_name, last_name, phone",
+      "INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING username, password, first_name, last_name, phone",
       [newUsername, hashedPassword, new_first_name, new_last_name, new_phone]
     );
-    const { username, first_name, last_name, phone } = results.rows[0];
-
-    return new User(username, first_name, last_name, phone);
+    const newUser = results.rows[0];
+    return newUser;
   }
 
   /** Authenticate: is this username/password valid? Returns boolean. */
@@ -66,7 +47,7 @@ class User {
 
   static async updateLoginTimestamp(username) {
     await db.query(
-      "UPDATE users SET last_login_at=CURRENT_DATE WHERE username=$1",
+      "UPDATE users SET last_login_at=CURRENT_TIMESTAMP WHERE username=$1",
       [username]
     );
   }
@@ -78,10 +59,8 @@ class User {
     const results = await db.query(
       "SELECT username, first_name, last_name, phone FROM users"
     );
-    const users = results.rows.map(
-      (u) => new User(u.username, u.first_name, u.last_name, u.phone)
-    );
-    return users;
+    // const users = results.rows;
+    return results.rows;
   }
 
   /** Get: get user by username
@@ -98,11 +77,11 @@ class User {
       "SELECT username, first_name, last_name, phone, join_at, last_login_at FROM users WHERE username=$1",
       [username]
     );
-    const u = results.rows[0];
-    if (!u) {
+
+    if (!results.rows[0]) {
       throw new ExpressError("No user found", 404);
     }
-    return new User(u.username, u.first_name, u.last_name);
+    return results.rows[0];
   }
 
   /** Return messages from this user.

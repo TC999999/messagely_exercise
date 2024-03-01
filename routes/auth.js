@@ -36,9 +36,18 @@ router.post("/login", async (req, res, next) => {
 router.post("/register", async (req, res, next) => {
   try {
     const { username, password, first_name, last_name, phone } = req.body;
-    await User.register(username, password, first_name, last_name, phone);
-    const token = jwt.sign({ username }, SECRET_KEY);
-    return res.json({ msg: `User ${username} created. Welcome!`, token });
+    const newUser = await User.register(
+      username,
+      password,
+      first_name,
+      last_name,
+      phone
+    );
+    const token = jwt.sign({ username: newUser.username }, SECRET_KEY);
+    return res.json({
+      msg: `User ${newUser.username} created. Welcome!`,
+      token,
+    });
   } catch (err) {
     if (err.code === "23505") {
       return next(
