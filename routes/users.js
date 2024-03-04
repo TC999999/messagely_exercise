@@ -2,6 +2,7 @@ const express = require("express");
 const router = new express.Router();
 const { ensureCorrectUser } = require("../middleware/auth");
 const User = require("../models/user");
+const ExpressError = require("../expressError");
 
 /** GET / - get list of users.
  *
@@ -27,6 +28,9 @@ router.get("/", async (req, res, next) => {
 router.get("/:username", async (req, res, next) => {
   try {
     const user = await User.get(req.params.username);
+    if (!user) {
+      throw new ExpressError("No such user exists", 404);
+    }
     const { username, first_name, last_name, phone, join_at, last_login_at } =
       user;
     return res.json({
@@ -51,7 +55,7 @@ router.get("/:username", async (req, res, next) => {
  *                 from_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.post("/:username/to", ensureCorrectUser, async (req, res, next) => {
+router.get("/:username/to", ensureCorrectUser, async (req, res, next) => {
   try {
     const messages = await User.messagesTo(req.params.username);
     return res.json(messages);
@@ -69,7 +73,7 @@ router.post("/:username/to", ensureCorrectUser, async (req, res, next) => {
  *                 to_user: {username, first_name, last_name, phone}}, ...]}
  *
  **/
-router.post("/:username/from", ensureCorrectUser, async (req, res, next) => {
+router.get("/:username/from", ensureCorrectUser, async (req, res, next) => {
   try {
     const messages = await User.messagesFrom(req.params.username);
     return res.json(messages);
