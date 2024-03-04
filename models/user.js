@@ -82,6 +82,9 @@ class User {
       "SELECT id, to_username, body, sent_at, read_at FROM messages WHERE from_username=$1",
       [username]
     );
+    if (results.rows.length == 0) {
+      throw new ExpressError("No user found", 404);
+    }
 
     const from_messages_promises = results.rows.map(async (u) => {
       const to_user = await db.query(
@@ -114,6 +117,9 @@ class User {
       "SELECT id, from_username, body, sent_at, read_at FROM messages WHERE to_username=$1",
       [username]
     );
+    if (results.rows.length == 0) {
+      throw new ExpressError("No user found", 404);
+    }
 
     const to_messages_promises = results.rows.map(async (u) => {
       const from_user = await db.query(

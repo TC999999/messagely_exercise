@@ -17,7 +17,7 @@ const ExpressError = require("../expressError");
  *
  **/
 
-router.post("/:id", ensureLoggedIn, async (req, res, next) => {
+router.get("/:id", ensureLoggedIn, async (req, res, next) => {
   try {
     const message = await Message.get(req.params.id);
     if (
@@ -47,7 +47,7 @@ router.post("/post", ensureLoggedIn, async (req, res, next) => {
       to_username,
       body,
     });
-    return res.json(message);
+    return res.status(201).json(message);
   } catch (err) {
     return next(err);
   }

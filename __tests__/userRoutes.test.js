@@ -6,6 +6,7 @@ const request = require("supertest");
 const app = require("../app");
 
 let testToken;
+let testToken2;
 beforeEach(async function () {
   await db.query("DELETE FROM messages");
   await db.query("DELETE FROM users");
@@ -18,13 +19,15 @@ beforeEach(async function () {
   });
   testToken = u.body.token;
 
-  let u2 = await User.register({
+  let u2 = await request(app).post("/auth/register").send({
     username: "test2",
     password: "password",
     first_name: "Test2",
     last_name: "Testy2",
     phone: "+14155552222",
   });
+  testToken2 = u2.body.token;
+
   let m1 = await Message.create({
     from_username: "test",
     to_username: "test2",
@@ -99,6 +102,18 @@ describe("GET /users/:username/to", () => {
       },
     ]);
   });
+
+  test("returns 401 without token", async () => {
+    const res = await request(app).get(`/users/test/to`);
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("returns 401 with incorrect token", async () => {
+    const res = await request(app)
+      .get(`/users/test/to`)
+      .send({ _token: testToken2 });
+    expect(res.statusCode).toBe(401);
+  });
 });
 
 describe("GET /users/:username/from", () => {
@@ -121,6 +136,18 @@ describe("GET /users/:username/from", () => {
         },
       },
     ]);
+  });
+
+  test("returns 401 without token", async () => {
+    const res = await request(app).get(`/users/test/from`);
+    expect(res.statusCode).toBe(401);
+  });
+
+  test("returns 401 with incorrect token", async () => {
+    const res = await request(app)
+      .get(`/users/test/from`)
+      .send({ _token: testToken2 });
+    expect(res.statusCode).toBe(401);
   });
 });
 
