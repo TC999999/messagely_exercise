@@ -23,10 +23,11 @@ class User {
   /** Authenticate: is this username/password valid? Returns boolean. */
 
   static async authenticate(username, password) {
-    if (!username || !password) {
-      throw new ExpressError("Both username and password are required", 400);
-    }
-    const user = await User.get(username);
+    const result = await db.query(
+      "SELECT password FROM users WHERE username=$1",
+      [username]
+    );
+    const user = result.rows[0];
     return await bcrypt.compare(password, user.password);
   }
 
@@ -61,13 +62,10 @@ class User {
 
   static async get(username) {
     const results = await db.query(
-      "SELECT username, password, first_name, last_name, phone, join_at, last_login_at FROM users WHERE username=$1",
+      "SELECT username, first_name, last_name, phone, join_at, last_login_at FROM users WHERE username=$1",
       [username]
     );
 
-    if (!results.rows[0]) {
-      throw new ExpressError(`No User with username ${username} found`, 404);
-    }
     return results.rows[0];
   }
 
@@ -92,7 +90,7 @@ class User {
       );
       return {
         id: u.id,
-        to_user: to_user.rows,
+        to_user: to_user.rows[0],
         body: u.body,
         sent_at: u.sent_at,
         read_at: u.read_at,
@@ -124,7 +122,7 @@ class User {
       );
       return {
         id: u.id,
-        from_user: from_user.rows,
+        from_user: from_user.rows[0],
         body: u.body,
         sent_at: u.sent_at,
         read_at: u.read_at,

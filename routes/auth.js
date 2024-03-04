@@ -15,12 +15,18 @@ const { SECRET_KEY } = require("../config");
 router.post("/login", async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    if (await User.authenticate(username, password)) {
-      await User.updateLoginTimestamp(username);
-      const token = jwt.sign({ username }, SECRET_KEY);
-      return res.json({ msg: `Welcome back, ${username}!`, token });
+    if (!username || !password) {
+      throw new ExpressError("Both username and password are required", 400);
     }
-    throw new ExpressError(`Incorrect password`, 400);
+    const user = await User.get(username);
+    if (user) {
+      if (await User.authenticate(username, password)) {
+        await User.updateLoginTimestamp(username);
+        const token = jwt.sign({ username }, SECRET_KEY);
+        return res.json({ msg: `Welcome back, ${username}!`, token });
+      }
+    }
+    throw new ExpressError(`Incorrect Username/Password`, 400);
   } catch (err) {
     return next(err);
   }
