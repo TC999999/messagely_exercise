@@ -55,11 +55,14 @@ router.post("/register", async (req, res, next) => {
       token,
     });
   } catch (err) {
+    // Violates unique constraint
     if (err.code === "23505") {
       return next(
         new ExpressError("Username taken. Please pick another!", 400)
       );
-    } else if (err.code === "23502") {
+    }
+    // Violates not null constraint
+    else if (err.code === "23502") {
       return next(
         new ExpressError(
           "Fields must include a username, a password, your first name, your last name, and your phone number",
